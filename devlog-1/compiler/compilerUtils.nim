@@ -3,7 +3,7 @@ include "compilerTypes.nim"
 import "constants.nim"
 
 
-proc substringSplit(input : string, breakCharacters : seq[char]) : seq[string] =
+proc substringSplit(input : string, breakCharacters : openArray[char]) : seq[string] =
   var brokenStrings : seq[string] = @[]
   var currentString : string = ""
   
@@ -21,7 +21,7 @@ proc substringSplit(input : string, breakCharacters : seq[char]) : seq[string] =
   
   return brokenStrings
 
-proc removeSubstring(subStrings : seq[string], filterString : string) : seq[string] =
+proc removeSubstring(subStrings : openArray[string], filterString : string) : seq[string] =
     var returnSubstrings : seq[string] = @[]
     for substring in subStrings:
         if substring != filterString:
@@ -166,6 +166,3 @@ proc genSubStart(bytecodeSequence : var seq[string]) : void =
 
 proc genSubEnd(bytecodeSequence : var seq[string]) : void =
     bytecodeSequence.add(SUBEND)
-
-proc genError() : void =
-  echo("Error: unhandled node for bytecode generation")

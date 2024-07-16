@@ -48,7 +48,7 @@ proc executeInstructions(instructions: seq[string], stateMachine: var stateMachi
             executeOperand(instruction, stateMachine)
             
 
-let instructions = @[LOAD, "5", ADD, SUBSTART, LOAD, "10", SUBEND]
+let instructions = @[LOAD, "5", ADD, SUBSTART, LOAD, "10", ADD, "19.2", SUBEND]
 var machine = initStateMachine()
 executeInstructions(instructions, machine)
 

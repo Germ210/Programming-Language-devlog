@@ -7,10 +7,8 @@ type
     value : string
 
   NodeTypes = enum
-    NtNum, NtAdd, NtSub, NtMul, NtDiv, NtSubexpressionStart, NtSubexpressionEnd
+    NtNum, NtAdd, NtSub, NtMul, NtDiv, NtSubexpressionStart, NtSubexpressionEnd, NtSOF
   
   nodeTuple = tuple
     kind : NodeTypes
     value : string
-
-  bytes = seq[int64]

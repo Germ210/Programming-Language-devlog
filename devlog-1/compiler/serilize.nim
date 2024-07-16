@@ -7,13 +7,13 @@ proc toUTF8(inputString : string) : seq[int64] =
     returnSequence.add(int64(ord(character)))
   return returnSequence
 
-proc fromUTF8(inputSequence : seq[int64]) : string =
+proc fromUTF8(inputSequence : openArray[int64]) : string =
   var returnString : string = ""
   for byteCharacter in inputSequence:
     returnString = returnString & char(chr(byteCharacter))
   return returnString
 
-proc store(fn: string, data: seq[int64]) =
+proc store(fn: string, data: openArray[int64]) =
   var s = newFileStream(fn, fmWrite)
   for x in data:
     s.write(x)

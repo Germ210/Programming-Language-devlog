@@ -41,6 +41,20 @@ proc parsePassOne(tokenList : seq[tokenTuple]) : seq[nodeTuple] =
         lastToken = token
     return nodeList
 
+proc parsePassTwo(nodeList : openArray[nodeTuple]) : seq[nodeTuple] =
+    var lastNode : nodeTuple = (kind : NtSOF, value : NULL)
+    var newNodeList : seq[nodeTuple] = @[]
+    for node in nodeList:
+        if node.kind == NtMul or node.kind == NtDiv and lastNode.kind == NtAdd or lastNode.kind == NtSub:
+            newNodeList.add( (kind : NtAdd, value : NULL) )
+            newNodeList.add( (kind : NtSubexpressionStart, value : NULL) )
+            newNodeList.add( (kind : NtNum, value : node.value) )
+            newNodeList.add( (node) )
+        else:
+            newNodeList.add(node)
+        lastNode = node
+    return newNodeList
+
 proc serializeBytecode(nodeList : seq[nodeTuple], write : bool) : seq[string] =
     var returnString : seq[string] 
     for node in nodeList:
@@ -53,8 +67,13 @@ proc serializeBytecode(nodeList : seq[nodeTuple], write : bool) : seq[string] =
             genSubStart(returnString)
         of NtSubexpressionEnd:
             genSubEnd(returnString)
-    
+        else:
+            discard
+    returnString = removeSubstring(returnString, NULL)
     if write == true:
         store("bytecode.bin", toUTF8(join(returnString, "")))
-
     return returnString
+
+proc deserializeBytecode(fileName : string) : seq[string] =
+    var content : seq[int64] = load(fileName)
+    return removeSubstring(substringSplit(fromUTF8(content), @['\0']), "\0")
