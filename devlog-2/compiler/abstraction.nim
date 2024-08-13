@@ -76,4 +76,15 @@ proc serializeBytecode(nodeList : seq[nodeTuple], write : bool) : seq[string] =
 
 proc deserializeBytecode(fileName : string) : seq[string] =
     var content : seq[int64] = load(fileName)
-    return removeSubstring(stringSplitAdd(fromUTF8(content), "\0"), NULL)
+    var returnThis : seq[string] = removeSubstring(stringSplitAdd(fromUTF8(content), '\0'), NULL)
+    return removeSubstring(returnThis, "")
+
+var
+    tokens = tokenizeString("1 + 2 * 3")
+    nodes = parsePassOne(tokens)
+
+nodes = parsePassTwo(nodes)
+var bytecode = serializeBytecode(nodes, true)
+var instructions = deserializeBytecode("bytecode.bin")
+echo(bytecode)
+echo(instructions)

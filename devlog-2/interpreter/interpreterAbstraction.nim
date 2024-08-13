@@ -1,6 +1,6 @@
 include "interpreterUtils.nim"
 from strutils import parseFloat
-import "C:\\Users\\memit\\Downloads\\Bendi\\Programming-Language-devlog\\devlog-1\\compiler\\constants.nim"
+import "..\\compiler\\constants.nim"
 
 proc initStateMachine() : stateMachine =
     var machine = stateMachine(states : initStates(), registers : initRegisters(), index : initIndex())
@@ -46,9 +46,3 @@ proc executeInstructions(instructions: seq[string], stateMachine: var stateMachi
             vmSubEnd(stateMachine.registers[stateMachine.index], stateMachine)
         else:
             executeOperand(instruction, stateMachine)
-            
-let instructions = @[LOAD, "5", ADD, SUBSTART, LOAD, "10", ADD, "19.2", SUBEND]
-var machine = initStateMachine()
-executeInstructions(instructions, machine)
-
-echo machine

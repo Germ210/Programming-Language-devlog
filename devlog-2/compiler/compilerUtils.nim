@@ -19,22 +19,40 @@ proc substringSplit(input : string, breakCharacters : openArray[char]) : seq[str
   
   return brokenStrings
 
-proc stringSplitAdd(input : string, breakString : string) : seq[string] =
-  var returnSequence : seq[string] = @[]
-  var currentSubstring : string = ""
+proc removeLastChacter(input : string) : string =
+  var len = 0
+  var newStr = ""
   for character in input:
-    if $character == breakString:
-      currentSubstring &= character
+    if len == input.len() - 1:
+      break
+    newStr.add(character)
+    len += 1
+  return newStr
+
+proc stringSplitAdd(input: string, breakString: char): seq[string] =
+  var returnSequence: seq[string] = @[]
+  var realReturnSequence: seq[string] = @[]
+
+  var currentSubstring: string = ""
+  for character in input:
+    currentSubstring &= character
+    if character == breakString:
       returnSequence.add(currentSubstring)
       currentSubstring = ""
-    else:
-      currentSubstring &= character
+  returnSequence.add(currentSubstring)
+  for str in returnSequence:
+    if str notin [LOAD, ADD, SUB, MUL, DIV, SUBSTART, SUBEND, NULL]:
+      var newStr : string = removeLastChacter(str)
+      realReturnSequence.add(newStr)
+  return realReturnSequence
 
 proc removeSubstring(subStrings : openArray[string], filterString : string) : seq[string] =
     var returnSubstrings : seq[string] = @[]
     for substring in subStrings:
         if substring != filterString:
             returnSubstrings.add(substring)
+        else:
+            discard
     return returnSubStrings
 
 proc isNumber(inputString : string) : bool =
@@ -50,6 +68,19 @@ proc isNumber(inputString : string) : bool =
 
 proc tokenizeNumber(inputString : string, tokenlist : var seq[tokenTuple]) : void =
     tokenList.add( (kind : ttNumber, value : inputString) )
+  
+proc tokenizeConst(inputString : string, tokenlist : var seq[tokenTuple]) : void =
+    tokenList.add( (kind : ttConst, value : inputString) )
+
+proc tokenizeIdentifier(inputString : string, tokenlist : var seq[tokenTuple]) : void =
+    tokenList.add( (kind : ttIdentifier, value : inputString) )
+
+proc tokenizeKeyword(inputString : string, tokenlist : var seq[tokenTuple]) : void =
+  case inputString
+  of "const":
+    tokenizeConst(inputString, tokenList)
+  else:
+    tokenizeIdentifier(inputString, tokenList)
 
 proc tokenizeOperator(inputString : string, tokenlist : var seq[tokenTuple]) : void =
   case inputString:
@@ -78,7 +109,7 @@ proc tokenizeSOF(tokenList : var seq[tokenTuple]) : void =
 
 proc tokenizeEOF(tokenList : var seq[tokenTuple]) : void = 
     tokenList.add( (kind : ttEOF, value : "EOF") )
-
+  
 proc parseNumber(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
   of ttNumber:
@@ -116,9 +147,19 @@ proc parseOperator(lastToken : tokenTuple, currentToken : tokenTuple, nodeList :
   else:
     discard
 
+proc parseConst(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
+  case lastToken.kind
+  of ttNewline:
+    echo("Error, didn't expect a ", lastToken.kind, "before a constant definition")
+  else:
+    discard
+
 proc parseLParen(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
   of ttNumber:
+    nodeList.add( (kind : NtMul, value : NULL) )
+    nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
+  of ttIdentifier:
     nodeList.add( (kind : NtMul, value : NULL) )
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
   of ttPlus:
@@ -146,7 +187,11 @@ proc parseRParen(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : v
     discard
   of ttSOF:
     echo("Error: expected left parenthesis to open the subexpression, instead got start of file")
-  of ttLParen, ttRParen, ttNumber:
+  of ttConst:
+    echo("Error: expected variable to assign to a constant, not a closing parenthesis")
+  of ttLParen, ttRParen, ttNumber, ttIdentifier:
+    nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )
+  of ttNewline:
     nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )
 
 proc genNum(node : nodeTuple, bytecodeSequence : var seq[string]) : void =
