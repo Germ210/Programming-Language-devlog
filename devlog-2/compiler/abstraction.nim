@@ -2,7 +2,7 @@ include "serilize.nim"
 include "compilerUtils.nim"
 
 proc tokenizeString(inputString : string) : seq[tokenTuple] =
-    var brokenStrings : seq[string] = substringSplit(inputString, @[' ', '+', '-', '*', '/', ',', '(', ')'])
+    var brokenStrings : seq[string] = substringSplit(inputString, @[' ', '+', '-', '*', '/', ',', '(', ')', ':', '='])
     brokenStrings = removeSubstring(brokenStrings, " ")
     brokenStrings = removeSubstring(brokenStrings, "\t")
     var tokenList : seq[tokenTuple]
@@ -16,6 +16,8 @@ proc tokenizeString(inputString : string) : seq[tokenTuple] =
                 tokenizeOperator(substring, tokenList)
             of "(", ")":
                 tokenizeParenthesis(substring, tokenList)
+            of "const":
+                tokenizeConst(substring, tokenList)
             else:
                 discard
     tokenizeEof(tokenList)
@@ -36,6 +38,8 @@ proc parsePassOne(tokenList : seq[tokenTuple]) : seq[nodeTuple] =
             parseLParen(lastToken, token, nodeList)
         of ttRParen:
             parseRParen(lastToken, token, nodeList)
+        of ttConst:
+            parseConst(lastToken, token, nodeList)
         else:
             discard
         lastToken = token
@@ -80,11 +84,9 @@ proc deserializeBytecode(fileName : string) : seq[string] =
     return removeSubstring(returnThis, "")
 
 var
-    tokens = tokenizeString("1 + 2 * 3")
+    tokens = tokenizeString("const")
     nodes = parsePassOne(tokens)
 
 nodes = parsePassTwo(nodes)
-var bytecode = serializeBytecode(nodes, true)
-var instructions = deserializeBytecode("bytecode.bin")
-echo(bytecode)
-echo(instructions)
+echo("tokens: ", tokens)
+echo("nodes: ", nodes)

@@ -7,7 +7,7 @@ type
     value : string
 
   NodeTypes = enum
-    NtNum, NtAdd, NtSub, NtMul, NtDiv, NtSubexpressionStart, NtSubexpressionEnd, NtSOF
+    NtNum, NtAdd, NtSub, NtMul, NtDiv, NtSubexpressionStart, NtSubexpressionEnd, NtSOF, NtConst
   
   nodeTuple = tuple
     kind : NodeTypes

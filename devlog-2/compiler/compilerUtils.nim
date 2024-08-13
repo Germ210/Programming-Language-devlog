@@ -149,10 +149,10 @@ proc parseOperator(lastToken : tokenTuple, currentToken : tokenTuple, nodeList :
 
 proc parseConst(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
-  of ttNewline:
-    echo("Error, didn't expect a ", lastToken.kind, "before a constant definition")
+  of ttNewline, ttSOF:
+    nodeList.add( (kind : NtConst, value : currentToken.value) )
   else:
-    discard
+    echo("Error: expected newline or a semicolon before a constant")
 
 proc parseLParen(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
