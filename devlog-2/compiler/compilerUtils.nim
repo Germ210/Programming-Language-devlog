@@ -2,6 +2,7 @@ import strutils
 include "compilerTypes.nim"
 import "constants.nim"
 
+var numberOfNewLines = 1
 
 proc substringSplit(input : string, breakCharacters : openArray[char]) : seq[string] =
   var brokenStrings : seq[string] = @[]
@@ -66,6 +67,12 @@ proc isNumber(inputString : string) : bool =
     except ValueError:
       return false
 
+proc tokenizeEquals(inputString : string, tokenlist : var seq[tokenTuple]) : void =
+  tokenlist.add( (kind : ttEqual, value : inputString) )
+
+proc tokenizeColon(inputString : string, tokenlist : var seq[tokenTuple]) : void =
+  tokenlist.add( (kind : ttColon, value : inputString) )
+
 proc tokenizeNumber(inputString : string, tokenlist : var seq[tokenTuple]) : void =
     tokenList.add( (kind : ttNumber, value : inputString) )
   
@@ -81,6 +88,9 @@ proc tokenizeKeyword(inputString : string, tokenlist : var seq[tokenTuple]) : vo
     tokenizeConst(inputString, tokenList)
   else:
     tokenizeIdentifier(inputString, tokenList)
+
+proc tokenizeNewLine(inputString : string, tokenlist : var seq[tokenTuple]) : void =
+    tokenlist.add( (kind : ttNewline, value : inputString) )
 
 proc tokenizeOperator(inputString : string, tokenlist : var seq[tokenTuple]) : void =
   case inputString:
@@ -109,11 +119,30 @@ proc tokenizeSOF(tokenList : var seq[tokenTuple]) : void =
 
 proc tokenizeEOF(tokenList : var seq[tokenTuple]) : void = 
     tokenList.add( (kind : ttEOF, value : "EOF") )
+
+proc parseNewLine() : void =
+  numberOfNewlines += 1
+
+proc parseColon(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
+  case lastToken.kind
+  of ttIdentifier:
+    discard
+  else:
+    echo("Error: unexpected \"", lastToken.value, "\" before a colon ", numberOfNewLines)
+
+proc parseEquals(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
+  case lastToken.kind
+  of ttColon:
+    nodeList.add( (kind : NtAssign, value : lastToken.value & currentToken.value) )
+  else:
+    echo("Error: unexpected \"", lastToken.value, "\" before an equal sign")
   
 proc parseNumber(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
   of ttNumber:
-    echo("Error: multiple numbers in a row")
+    echo("Error: multiple numbers in a row ", numberOfNewLines)
+  of ttEqual:
+    nodeList.add( (kind : NtNum, value : currentToken.value) )
   of ttPlus:
     nodeList.add( (kind : NtAdd, value : currentToken.value) )
   of ttMinus:
@@ -126,7 +155,7 @@ proc parseNumber(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : v
     nodeList.add( (kind : NtSubexpressionStart, value : NULL ) )
     nodeList.add( (kind : NtNum, value : currentToken.value) )
   of ttRParen:
-    echo("Error: cannot have number after a closing parenthesis, perhaps try using either a multiplication operator or putting the number at the start of the subexpression")
+    echo("Error: cannot have number after a closing parenthesis, perhaps putting the number at the start of the subexpression ", numberOfNewLines)
   of ttSOF:
     nodeList.add( (kind : NtNum, value : currentToken.value) )
   else:
@@ -139,20 +168,28 @@ proc parseOperator(lastToken : tokenTuple, currentToken : tokenTuple, nodeList :
   of ttPlus, ttMinus, ttTimes, ttDivide:
     discard
   of ttLParen:
-    echo("Error: operator has no number to perform on")
+    echo("Error: operator has no number to perform on ", numberOfNewLines)
   of ttRParen:
     nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )
   of ttSOF:
-    echo("Error: operator has no number to perform on, add a number after the start of the file")
+    echo("Error: operator has no number to perform on, add a number after the start of the file ", numberOfNewLines)
   else:
     discard
 
 proc parseConst(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
   of ttNewline, ttSOF:
-    nodeList.add( (kind : NtConst, value : currentToken.value) )
+    discard
   else:
-    echo("Error: expected newline or a semicolon before a constant")
+    echo("Error: expected newline or a semicolon before a constant ", numberOfNewLines)
+
+proc parsePass2Const(lastNode : nodeTuple, currentNode : nodeTuple, nodeList : var seq[nodeTuple]) : void =
+  case lastNode.kind
+  of NtConst:
+    nodeList.add( (kind : NtAssignConst, value : lastNode.value) )
+  else:
+    discard
+    
 
 proc parseLParen(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind
@@ -186,13 +223,44 @@ proc parseRParen(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : v
   of ttEOF:
     discard
   of ttSOF:
-    echo("Error: expected left parenthesis to open the subexpression, instead got start of file")
+    echo("Error: expected left parenthesis to open the subexpression, instead got start of file ", numberOfNewLines)
   of ttConst:
     echo("Error: expected variable to assign to a constant, not a closing parenthesis")
   of ttLParen, ttRParen, ttNumber, ttIdentifier:
     nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )
   of ttNewline:
     nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )
+  else:
+    echo("Error: unexpected " , lastToken.value, "before a right parenthesis")
+
+proc parseIdentifier(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) =
+  case lastToken.kind
+  of ttPlus, ttMinus, ttTimes, ttDivide:
+    nodeList.add( (kind : NtAdd, value : NULL) )
+    nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
+    nodeList.add( (kind : NtGetValue, value : currentToken.value) )
+    nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )
+  of ttIdentifier:
+    echo("Error: cannot have identifier next to another identifier without operator ", numberOfNewLines)
+  of ttNumber:
+    echo("Error: cannot have number next to identifier without operator ", numberOfNewLines)
+  of ttLParen:
+    nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
+    nodeList.add( (kind : NtGetValue, value : currentToken.value) )
+  of ttConst:
+    nodeList.add( (kind : NtConst, value : currentToken.value) )
+  of ttSOF:
+    echo("Error: expected \"const\" or \"set\" before an identifier, not the start of the file", numberOfNewLines)
+  of ttRParen:
+    echo("Error: cannot have identifier after a closing parenthesis, perhaps try putting the identifier at the start of the subexpression ", numberOfNewLines)
+  of ttEOF:
+    discard
+  of ttNewline:
+    nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
+    nodeList.add( (kind : NtGetValue, value : currentToken.value) )
+    nodeList.add( (kind : NtSubexpressionEnd, value : NULL) )  
+  else:
+    discard
 
 proc genNum(node : nodeTuple, bytecodeSequence : var seq[string]) : void =
     bytecodeSequence.add(LOAD)
@@ -220,3 +288,7 @@ proc genSubStart(bytecodeSequence : var seq[string]) : void =
 
 proc genSubEnd(bytecodeSequence : var seq[string]) : void =
     bytecodeSequence.add(SUBEND)
+
+proc genConst(node : nodeTuple, bytecodeSequence : var seq[string]) : void =
+  bytecodeSequence.add(CONST)
+  bytecodeSequence.add(node.value & "\0")

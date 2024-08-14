@@ -7,3 +7,4 @@ const
     SUBSTART* = "!\0"
     SUBEND* = "#\0"
     NULL* = "n\0"
+    CONST* = "C\0"

@@ -2,7 +2,7 @@ include "serilize.nim"
 include "compilerUtils.nim"
 
 proc tokenizeString(inputString : string) : seq[tokenTuple] =
-    var brokenStrings : seq[string] = substringSplit(inputString, @[' ', '+', '-', '*', '/', ',', '(', ')', ':', '='])
+    var brokenStrings : seq[string] = substringSplit(inputString, @[' ', '+', '-', '*', '/', ',', '(', ')', ':', '=', '\n'])
     brokenStrings = removeSubstring(brokenStrings, " ")
     brokenStrings = removeSubstring(brokenStrings, "\t")
     var tokenList : seq[tokenTuple]
@@ -18,8 +18,14 @@ proc tokenizeString(inputString : string) : seq[tokenTuple] =
                 tokenizeParenthesis(substring, tokenList)
             of "const":
                 tokenizeConst(substring, tokenList)
+            of "\n":
+                tokenizeNewLine(substring, tokenList)
+            of ":":
+                tokenizeColon(substring, tokenList)
+            of "=":
+                tokenizeEquals(substring, tokenList)
             else:
-                discard
+                tokenizeIdentifier(substring, tokenList)
     tokenizeEof(tokenList)
     return tokenList
 
@@ -40,6 +46,14 @@ proc parsePassOne(tokenList : seq[tokenTuple]) : seq[nodeTuple] =
             parseRParen(lastToken, token, nodeList)
         of ttConst:
             parseConst(lastToken, token, nodeList)
+        of ttIdentifier:
+            parseIdentifier(lastToken, token, nodeList)
+        of ttNewline:
+            parseNewLine()
+        of ttColon:
+            parseColon(lastToken, token, nodeList)
+        of ttEqual:
+            parseEquals(lastToken, token, nodeList)
         else:
             discard
         lastToken = token
@@ -54,6 +68,10 @@ proc parsePassTwo(nodeList : openArray[nodeTuple]) : seq[nodeTuple] =
             newNodeList.add( (kind : NtSubexpressionStart, value : NULL) )
             newNodeList.add( (kind : NtNum, value : node.value) )
             newNodeList.add( (node) )
+        elif node.kind == NtConst:
+            discard
+        elif node.kind == NtAssign and lastNode.kind == NtConst:
+            parsePass2Const(lastNode, node, newNodeList)
         else:
             newNodeList.add(node)
         lastNode = node
@@ -84,9 +102,9 @@ proc deserializeBytecode(fileName : string) : seq[string] =
     return removeSubstring(returnThis, "")
 
 var
-    tokens = tokenizeString("const")
+    tokens = tokenizeString("\nconst x := 5")
     nodes = parsePassOne(tokens)
-
 nodes = parsePassTwo(nodes)
-echo("tokens: ", tokens)
-echo("nodes: ", nodes)
+
+echo tokens
+echo nodes
