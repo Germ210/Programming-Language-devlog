@@ -1,0 +1,12 @@
+const
+    LOAD* = "L\n"
+    ADD* = "A\n"
+    SUB* = "S\n"
+    MUL* = "M\n"
+    DIV* = "D\n"
+    SUBSTART* = "!\n"
+    SUBEND* = "#\n"
+    NULL* = "n\n"
+    CONST* = "C\n"
+    ASSIGN* = "a\n"
+    GETVALUE* = "t\n"

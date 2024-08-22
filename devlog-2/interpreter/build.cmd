@@ -1,0 +1,1 @@
+nim c -r --hints:off interpreterAbstraction.nim

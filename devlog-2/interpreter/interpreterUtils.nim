@@ -9,6 +9,10 @@ proc initRegisters() : seq[register] =
 proc initIndex() : uint =
     return 0
 
+proc initVariables() : seq[Table[string, variable]] =
+    var variables = initTable[string, variable]()
+    return @[variables]
+
 proc changeState(newState : state, stateMachine : var stateMachine) : void =
     stateMachine.states[stateMachine.index] = newState
 
@@ -51,13 +55,23 @@ proc vmSubStart(stateMachine : var stateMachine) : void =
     stateMachine.registers.add( (f1 : 0.0) )
     stateMachine.states.add(programStart)
 
+
+proc vmAssign(stateMachine : var stateMachine, value : string) : void =
+    var stackTop = pop(stateMachine)
+    var kind = stateMachine.variables[stateMachine.index][stackTop].kind
+    stateMachine.variables[stateMachine.index][stackTop] = (kind : kind, value : value)
+
+  
 proc vmSubEnd(currentRegister : register, stateMachine : var stateMachine) : void =
+    var str = $currentRegister.f1
     stateMachine.registers.delete(stateMachine.index)
     stateMachine.states.delete(stateMachine.index)
     changeIndex(stateMachine, false)
     case stateMachine.states[stateMachine.index]
     of loading:
         vmLoad(currentRegister, stateMachine)
+    of assigning:
+        vmAssign(stateMachine, str)
     of adding:
         vmAdd(currentRegister.f1, stateMachine)
     of subtracting:
@@ -66,5 +80,11 @@ proc vmSubEnd(currentRegister : register, stateMachine : var stateMachine) : voi
         vmMultiply(currentRegister.f1, stateMachine)
     of dividing:
         vmDivide(currentRegister.f1, stateMachine)
-    of programStart:
-        echo("Error: Attempted to execute an operand before an operation has been defined")
+    else:
+        discard
+
+
+proc vmGetReference(variableName : string, stateMachine : var stateMachine) : void =
+    push(stateMachine, variableName)
+    var stackTop = peek(stateMachine)
+    stateMachine.variables[stateMachine.index][stackTop] = (kind : BendiNumber, value : "0.0")
