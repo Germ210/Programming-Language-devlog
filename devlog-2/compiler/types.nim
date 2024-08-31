@@ -7,7 +7,7 @@ type
     value : string
 
   NodeTypes* = enum
-    NtIdentifierOperand, NtFunStart, NtNumberOperand, NtNum, NtAdd, NtSub, NtMul, NtDiv, NtSubexpressionStart, NtSubexpressionEnd, NtGetReference, NtPass, NtFunCall
+    NtAddSubExpression, NtSubSubExpression, NtMulSubExpression, NtDivSubExpression, NtLoader, NtIdentifierOperand, NtFunStart, NtNumberOperand, NtNum, NtAdd, NtSub, NtMul, NtDiv, NtSubexpressionStart, NtSubexpressionEnd, NtGetReference, NtPass, NtFunCall
   
   nodeTuple* = tuple
     kind : NodeTypes

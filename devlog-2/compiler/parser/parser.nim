@@ -49,25 +49,25 @@ proc parseLParen(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : v
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
     numberOfExpressionss += 1
   of ttIdentifier:
-    nodeList.add( (kind : NtNum, value : NULL) )
+    nodeList.add( (kind : NtLoader, value : NULL) )
     nodeList.add( (kind : NtGetReference, value : lastToken.value) )
     nodeList.add( (kind : NtMul, value : NULL) )
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
     numberOfExpressionss += 1
   of ttPlus:
-    nodeList.add( (kind : NtAdd, value : NULL) )
+    nodeList.add( (kind : NtAddSubExpression, value : NULL) )
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
     numberOfExpressionss += 1
   of ttMinus:
-    nodeList.add( (kind : NtSub, value : NULL) )
+    nodeList.add( (kind : NtSubSubExpression, value : NULL) )
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
     numberOfExpressionss += 1
   of ttTimes:
-    nodeList.add( (kind : NtMul, value : NULL) )
+    nodeList.add( (kind : NtMulSubExpression, value : NULL) )
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
     numberOfExpressionss += 1
   of ttDivide:
-    nodeList.add( (kind : NtDiv, value : NULL) )
+    nodeList.add( (kind : NtDivSubExpression, value : NULL) )
     nodeList.add( (kind : NtSubexpressionStart, value : NULL) )
     numberOfExpressionss += 1
   of ttLParen:

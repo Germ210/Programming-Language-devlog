@@ -90,7 +90,12 @@ proc parsePassTwo(nodeList: seq[nodeTuple]): seq[nodeTuple] =
         return @[]
     return newNodeList
 
-var tokens = tokenizeString("( (atom >> x, 5) )")
+var tokens = tokenizeString("""
+  (
+    (5 + (6 / 2))
+  )
+""")
+
 var nodes = parsePassOne(tokens)
 nodes = parsePassTwo(nodes)
 
