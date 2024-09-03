@@ -1,8 +1,8 @@
 type
-  stackData = string
-  Stack = object
-    data : seq[stackData]
-    top : int
+  types = enum 
+    BendyNumber, BendyString, BendyBoolean
+  bendyVariable = tuple[kind : bendyVariableTypes, value : string]                                                                                                 │  ▼ interface/
+  variableTables = seq[Table[string, bendyVariable]]
 
 proc initStack() : Stack =
   return Stack(data : @[], top : -1)

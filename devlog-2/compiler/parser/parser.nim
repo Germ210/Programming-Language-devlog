@@ -20,10 +20,12 @@ proc parseNumber(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : v
     fatalError = true
   of ttSOF:
     nodeList.add( (kind : NtNum, value : currentToken.value) )
+  of ttAngleBracket:
+    nodeList.add( (kind : NtNumberOperand, value : currentToken.value) )
   of ttComma:
     nodeList.add( (kind : NtNumberOperand, value : currentToken.value) )
   else:
-    echo("Error: unexpected ", currentToken.value, " before a number ", numberOfExpressionss)
+    echo("Error: unexpected ", lastToken.value, " before a number ", numberOfExpressionss)
 
 proc parseOperator(lastToken : tokenTuple, currentToken : tokenTuple, nodeList : var seq[nodeTuple]) : void =
   case lastToken.kind

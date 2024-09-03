@@ -6,8 +6,10 @@ proc tokenizeString(inputString : string) : seq[tokenTuple] =
     brokenStrings = removeSubstring(brokenStrings, " ")
     brokenStrings = removeSubstring(brokenStrings, "\t")
     var tokenList : seq[tokenTuple]
+    var i : int = 0
     tokenizeSOF(tokenList)
-    for substring in brokenStrings:
+    while i < brokenStrings.len():
+        var substring = brokenStrings[i]
         if fatalError == true:
             return @[]
         if isNumber(substring):
@@ -26,6 +28,7 @@ proc tokenizeString(inputString : string) : seq[tokenTuple] =
                 tokenizeAngelBrackets(substring, tokenList)
             else:
                 tokenizeIdentifier(substring, tokenList)
+        i += 1
     tokenizeEof(tokenList)
     return tokenList
 
@@ -92,7 +95,7 @@ proc parsePassTwo(nodeList: seq[nodeTuple]): seq[nodeTuple] =
 
 var tokens = tokenizeString("""
   (
-    (5 + (6 / 2))
+    (add >> 5, 6, 7)
   )
 """)
 
